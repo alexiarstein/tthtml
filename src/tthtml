@@ -1,0 +1,92 @@
+#!/bin/bash
+# TTHTML (TEXT-TO-HTML) v2.0.1 by Alexia Rivera Steinberg 
+# https://github.com/alexiarstein
+# -------------------------------------------------------
+
+# This software is licensed under a GNU GPL 3.0 General Public License.
+# You may modify and redistribute this software but original credits 
+# must be kept in place. 
+# Keep my authorship. Name and github repo. Thank you!
+# -------------------------------------------------------
+
+
+version="v2.0.1"
+# Check if input file exists
+if [ ! -f "$1" ]; then
+    echo "Input file not found"
+    exit 1
+fi
+
+# Create output file name
+output_file="${1%.*}.html"
+
+# Open output file for writing
+exec 3> "$output_file"
+
+# Write HTML header to output file
+echo "<!DOCTYPE html>" >&3
+echo "<html>" >&3
+echo "<head>" >&3
+echo "<meta charset="UTF-8">" >&3
+echo "<!-- This file was converted to HTML using TTHTML $version by Alexia Rivera - Download: github.com/alexiarstein -->" >&3
+echo "<title>$(basename "$1" .txt)</title>" >&3
+echo "</head>" >&3
+echo "<body>" >&3
+
+# Process input file line by line
+while read -r line; do
+    # Replace [link] tags
+    link_regex='\[link\](.*?)\[/link\]'
+    link_replacement='<a href="\1">\1</a>'
+    line=$(echo "$line" | sed -E "s|$link_regex|$link_replacement|g")
+
+    # Replace [b] tags
+    b_regex='\[b\](.*?)\[/b\]'
+    b_replacement='<strong>\1</strong>'
+    line=$(echo "$line" | sed -E "s|$b_regex|$b_replacement|g")
+
+    # Replace [u] tags
+    u_regex='\[u\](.*?)\[/u\]'
+    u_replacement='<u>\1</u>'
+    line=$(echo "$line" | sed -E "s|$u_regex|$u_replacement|g")
+
+    # Replace [i] tags
+    i_regex='\[i\](.*?)\[/i\]'
+    i_replacement='<em>\1</em>'
+    line=$(echo "$line" | sed -E "s|$i_regex|$i_replacement|g")
+
+    # Replace [img] tags
+    img_regex='\[img\](.*?)\[/img\]'
+    img_replacement='<img src="\1">'
+    line=$(echo "$line" | sed -E "s|$img_regex|$img_replacement|g")
+
+    # Replace [marquee] tags
+    marquee_regex='\[marquee\](.*?)\[/marquee\]'
+    marquee_replacement='<marquee>\1</marquee>'
+    line=$(echo "$line" | sed -E "s|$marquee_regex|$marquee_replacement|g")
+
+    # Replace [color] tags
+    color_regex='\[color=([^]]+)\](.*?)\[/color\]'
+    color_replacement='<span style="color:\1">\2</span>'
+    line=$(echo "$line" | sed -E "s|$color_regex|$color_replacement|g")
+
+    # Replace [list] tags
+    list_regex='\[list\](.*?)\[/list\]'
+    list_replacement='<ul>\1</ul>'
+    line=$(echo "$line" | sed -E "s|$list_regex|$list_replacement|g")
+
+    # Replace list item tags
+    list_item_regex='\[\*\](.*?)\n'
+    list_item_replacement='<li>\1</li>'
+    line=$(echo "$line" | sed -E "s|$list_item_regex|$list_item_replacement|g")
+
+    # Write processed line to output file
+    echo "<p>$line</p>" >&3
+done < "$1"
+
+# Write HTML footer to output file
+echo "</body>" >&3
+echo "</html>" >&3
+
+# Close output file
+exec 3>&-
